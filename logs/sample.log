@@ -1,0 +1,5 @@
+2026-08-12 09:15:03.001 INFO Service started successfully
+2026-08-12 09:15:04.250 DEBUG Loaded configuration from /etc/app/config.yml
+2026-08-12 09:16:12.480 WARN Cache miss for key user:42, falling back to database
+2026-08-12 09:17:45.900 ERROR Failed to connect to upstream service after 3 retries
+2026-08-12 09:18:01.120 INFO Recovered connection to upstream service
