@@ -20,8 +20,8 @@ Also make sure you configure your host settings according to the [OpenSearch doc
 1. **Clone the repository**:
 
    ```bash
-   git clone https://github.com/blauwe-lucht/docker-compose-opensearch-dashboards.git
-   cd docker-compose-opensearch-dashboards
+   git clone https://github.com/blauwe-lucht/fluentbit-opensearch-docker-compose-demo.git
+   cd fluentbit-opensearch-docker-compose-demo
    ```
 
 2. **Start the OpenSearch and OpenSearch Dashboards**:
@@ -127,10 +127,11 @@ rollover via Index State Management. The underlying backing indices are named
 3. **View the logs in OpenSearch Dashboards**:
 
    1. Open <http://localhost:5601> and log in (admin/T!mberW0lf#92).
-   2. Go to **Dashboards Management → Index patterns → Create index pattern**.
-   3. Enter `fluentbit-logs` as the pattern, then press 'Next step'.
-   4. Select `@timestamp` as the time field. Press 'Create index pattern'.
-   5. Open **Discover** to browse the parsed `level` and `message` fields. Select 2026-08-12 whole day to see the sample log entries.
+   2. One time setup:
+      1. Go to **Dashboards Management → Index patterns → Create index pattern**.
+      2. Enter `fluentbit-logs` as the pattern, then press 'Next step'.
+      3. Select `@timestamp` as the time field. Press 'Create index pattern'.
+   3. Open **Discover** to browse the parsed `level` and `message` fields. Select 2026-08-12 whole day to see the sample log entries.
 
 4. **Check Fluent Bit's own logs** if records don't show up:
 
