@@ -94,6 +94,20 @@ append-only, time-series-friendly target with a fixed mapping and easy
 rollover via Index State Management. The underlying backing indices are named
 `.ds-fluentbit-logs-*` and are managed by OpenSearch for you.
 
+The `opensearch-setup` container also installs an
+[Index State Management (ISM)](https://opensearch.org/docs/latest/im-plugin/ism/index/)
+policy ([`opensearch/ism-policy.json`](opensearch/ism-policy.json)) that gives
+the data stream **30-day retention**: each backing index rolls over once it is a
+day old **or** reaches 10 GB (whichever comes first) and is deleted once it is
+30 days old. The policy is attached automatically via
+its `ism_template` (matching `fluentbit-logs*`), which is why it must be created
+before the data stream. You can check the policy status per index with:
+
+```bash
+curl -sk -u admin:'T!mberW0lf#92' \
+  "https://localhost:9200/_plugins/_ism/explain/fluentbit-logs?pretty"
+```
+
 ### Try it
 
 1. **Start the stack**:
@@ -113,8 +127,17 @@ rollover via Index State Management. The underlying backing indices are named
    docker compose logs -f opensearch-setup
    ```
 
-2. **Generate more log lines** (optional) using the included script, which
-   appends correctly-formatted lines to `logs/generated.log`:
+2. **Log lines are generated automatically**: a `log-generator` container runs
+   [`generate-logs.sh`](generate-logs.sh) continuously (one line per second),
+   appending correctly-formatted lines to `logs/generated.log` so there's a
+   steady stream of data to view in Dashboards. Stop it with:
+
+   ```bash
+   docker compose stop log-generator
+   ```
+
+   You can also run the script manually (e.g. from another machine, or to
+   generate a fixed batch instead of an endless stream):
 
    ```bash
    ./generate-logs.sh          # one line per second until you press Ctrl-C

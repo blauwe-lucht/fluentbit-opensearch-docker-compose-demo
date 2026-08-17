@@ -1,10 +1,14 @@
 #!/bin/sh
-# One-shot setup: wait for OpenSearch, install the index template, and create
-# the "fluentbit-logs" data stream so Fluent Bit can write to it.
+# One-shot setup: wait for OpenSearch, install the index template and ISM
+# retention policy, and create the "fluentbit-logs" data stream so Fluent Bit
+# can write to it.
 #
 # Runs in a small curl container (see the opensearch-setup service in
 # docker-compose.yml) and exits when done. Fluent Bit waits for a successful
 # exit before starting.
+#
+# Order matters: the ISM policy (with its ism_template) must exist *before* the
+# data stream is created, so the first backing index automatically picks it up.
 set -eu
 
 OS_URL="https://opensearch-node1:9200"
@@ -25,6 +29,15 @@ curl -fsSk -u "$AUTH" -X PUT \
     "$OS_URL/_index_template/fluentbit-logs-template" \
     -H 'Content-Type: application/json' \
     --data-binary @/opensearch/index-template.json
+echo
+
+echo "Installing ISM retention policy 'fluentbit-logs-retention' (30-day retention)..."
+# PUT is idempotent for the initial policy; on re-runs OpenSearch returns a 409
+# "version conflict" because the policy already exists, which is fine here.
+curl -sk -u "$AUTH" -X PUT \
+    "$OS_URL/_plugins/_ism/policies/fluentbit-logs-retention" \
+    -H 'Content-Type: application/json' \
+    --data-binary @/opensearch/ism-policy.json
 echo
 
 echo "Creating data stream '$DATA_STREAM' (ignored if it already exists)..."

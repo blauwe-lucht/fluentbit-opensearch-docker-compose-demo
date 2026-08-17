@@ -24,6 +24,7 @@ services:
       - 9600:9600 # Performance Analyzer
     networks:
       - opensearch-net # All of the containers will join the same Docker bridge network
+
   opensearch-node2:
     image: opensearchproject/opensearch:2.19.6 # This should be the same image used for opensearch-node1 to avoid issues
     container_name: opensearch-node2
@@ -46,6 +47,7 @@ services:
       - opensearch-data2:/usr/share/opensearch/data
     networks:
       - opensearch-net
+
   opensearch-dashboards:
     image: opensearchproject/opensearch-dashboards:2.19.6 # Make sure the version of opensearch-dashboards matches the version of opensearch installed on other nodes
     container_name: opensearch-dashboards
@@ -57,17 +59,20 @@ services:
       OPENSEARCH_HOSTS: '["https://opensearch-node1:9200","https://opensearch-node2:9200"]' # Define the OpenSearch nodes that OpenSearch Dashboards will query
     networks:
       - opensearch-net
+
   opensearch-setup:
     image: curlimages/curl:8.11.1 # Tiny one-shot container to configure OpenSearch, then exit
     container_name: opensearch-setup
     depends_on:
       - opensearch-node1
     volumes:
-      - ./opensearch/setup.sh:/setup.sh:ro # Waits for the cluster, then creates the template + data stream
+      - ./opensearch/setup.sh:/setup.sh:ro # Waits for the cluster, then creates the template, ISM policy + data stream
       - ./opensearch/index-template.json:/opensearch/index-template.json:ro # Data-stream index template
+      - ./opensearch/ism-policy.json:/opensearch/ism-policy.json:ro # 30-day retention policy for the data stream
     entrypoint: ["sh", "/setup.sh"]
     networks:
       - opensearch-net
+
   fluent-bit:
     image: fluent/fluent-bit:5.1 # Log processor that tails ./logs and ships parsed records to OpenSearch
     container_name: fluent-bit
@@ -79,6 +84,19 @@ services:
       - ./fluent-bit/parsers.conf:/fluent-bit/etc/parsers.conf:ro # Custom regex parser for the log format
       - ./logs:/logs:ro # Directory of *.log files to parse (read-only; Fluent Bit only tails them)
       - fluent-bit-state:/var/lib/fluent-bit # Offset-tracking DB
+    networks:
+      - opensearch-net
+
+  log-generator:
+    image: debian:bookworm-slim # Has bash + GNU date (needed for millisecond timestamps), used to run generate-logs.sh
+    container_name: log-generator
+    depends_on:
+      - fluent-bit
+    volumes:
+      - ./generate-logs.sh:/generate-logs.sh:ro # Script that appends fake log lines to ./logs/generated.log
+      - ./logs:/logs # Same directory Fluent Bit tails, so generated lines are picked up live
+    entrypoint: ["bash", "/generate-logs.sh"]
+    command: ["0", "1"] # Run forever, one line every second
     networks:
       - opensearch-net
 

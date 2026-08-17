@@ -1,0 +1,28 @@
+{
+  "policy": {
+    "description": "Roll the fluentbit-logs data stream over daily and delete backing indices older than 30 days.",
+    "default_state": "hot",
+    "states": [
+      {
+        "name": "hot",
+        "actions": [
+          { "rollover": { "min_index_age": "1d", "min_size": "10gb" } }
+        ],
+        "transitions": [
+          { "state_name": "delete", "conditions": { "min_index_age": "30d" } }
+        ]
+      },
+      {
+        "name": "delete",
+        "actions": [
+          { "delete": {} }
+        ],
+        "transitions": []
+      }
+    ],
+    "ism_template": {
+      "index_patterns": ["fluentbit-logs*"],
+      "priority": 100
+    }
+  }
+}
