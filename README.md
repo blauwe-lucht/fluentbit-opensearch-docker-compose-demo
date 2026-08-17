@@ -1,7 +1,7 @@
 # FluentBit & OpenSearch and OpenSearch Dashboards demo
 
 This repository provides a simple setup to run [OpenSearch](https://opensearch.org/docs/latest/getting-started/intro/)
-and [OpenSearch Dashboards](https://www.opensearch.org/docs/latest/dashboards/) 
+and [OpenSearch Dashboards](https://www.opensearch.org/docs/latest/dashboards/)
 with [FluentBit](https://fluentbit.io/) as log parser & forwarder
 using [Docker Compose](https://docs.docker.com/compose/),
 based on the [official example docker-compose.yml](https://opensearch.org/docs/latest/install-and-configure/install-opensearch/docker/#deploy-an-opensearch-cluster-using-docker-compose).
@@ -167,6 +167,49 @@ curl -sk -u admin:'T!mberW0lf#92' \
    ```bash
    docker compose logs -f fluent-bit
    ```
+
+### Saved searches, visualizations, and dashboards
+
+In Discover you see the raw logs over time. You can filter and save to a saved query.
+
+For example to filter on errors, go to one of the logs that has ERROR log level,
+expand it and hover over the level line. That will pop up some actions, click on the
+magnifying glass with the plus. The filter will now appear at the top.
+Save this as 'errors'.
+
+To build a proper "errors over time" chart:
+
+1. Go to **Visualize → Create visualization** and pick
+   **Line** → select the `errors` saved search as input.
+2. Under **Buckets**, add **X-axis → Date Histogram** on `@timestamp` (the
+   auto interval is fine).
+3. Leave the default **Y-axis** metric as **Count**.
+4. **Save** the visualization (e.g. "Errors over time").
+
+To have a single metric showing the amount of errors of a time range:
+
+1. Go to **Visualize → Create visualization** and pick **Metric** → select the `errors` saved search as input.
+2. Leave everything at default.
+3. **Save** the visualization (e.g. "Nr errors").
+
+To show the count of logs per log level (e.g. how many `INFO` vs `WARN` vs
+`ERROR`):
+
+1. Go to **Visualize → Create visualization** and
+   **Vertical Bar** → select the `fluentbit-logs` index pattern (not the
+   `errors` saved search, since you want all levels, not just errors).
+2. Under **Buckets**, add **X-axis** →
+   **Terms** aggregation on the `level` field.
+3. Leave the default metric as **Count**.
+4. **Save** the visualization (e.g. "Logs per level").
+
+To create a dashboard:
+
+1. Go to **Dashboard**, select **Create new dashboard**.
+2. **Add an existing**, select visualization "Errors over time" and "Nr errors".
+3. Close the 'Add Panels' dialog.
+4. To have the dashboard update automatically, click the drop-down right of the calendar in the top right, set 'Refresh every' to 10 seconds.
+5. **Save** the dashboard (e.g. "Errors").
 
 ## Clean up
 
