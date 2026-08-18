@@ -16,7 +16,6 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 log_file="${script_dir}/logs/generated.log"
 mkdir -p "${script_dir}/logs"
 
-levels=(INFO DEBUG WARN ERROR)
 messages=(
     "Service started successfully"
     "Loaded configuration from /etc/app/config.yml"
@@ -27,11 +26,37 @@ messages=(
     "User admin logged in from 10.0.0.5"
 )
 
+# Roughly realistic level distribution for a healthy service: mostly DEBUG/INFO
+# noise, occasional WARN, rare ERROR. Weights must sum to 100.
+level_weights=(
+    "DEBUG:35"
+    "INFO:55"
+    "WARN:8"
+    "ERROR:2"
+)
+
+pick_level() {
+    local r=$((RANDOM % 100))
+    local cumulative=0
+    local pair lvl weight
+    for pair in "${level_weights[@]}"; do
+        lvl="${pair%%:*}"
+        weight="${pair##*:}"
+        cumulative=$((cumulative + weight))
+        if [ "${r}" -lt "${cumulative}" ]; then
+            echo "${lvl}"
+            return
+        fi
+    done
+    echo "${level_weights[-1]%%:*}"
+}
+
 emit_line() {
     # Millisecond-precision UTC timestamp to match the parser.
     local ts
     ts="$(date -u +'%Y-%m-%d %H:%M:%S.%3N')"
-    local level="${levels[RANDOM % ${#levels[@]}]}"
+    local level
+    level="$(pick_level)"
     local msg="${messages[RANDOM % ${#messages[@]}]}"
     echo "${ts} ${level} ${msg}" >> "${log_file}"
 }
